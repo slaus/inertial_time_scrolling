@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inertial Scrolling</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      margin-top: 50px;
+    }
+
+    .hours, .minutes {
+      display: flex;
+      flex-direction: column;
+      height: 125px;
+      overflow-y: scroll;
+	  scroll-snap-type: y mandatory; /* Добавляем scroll-snap-type */
+      scroll-behavior: smooth; /* Добавляем плавную прокрутку */
+    }
+
+    .hour-container, .minute-container {
+      transition: transform 0.2s ease;
+      transform-origin: top;
+    }
+
+    .hours span, .minutes span {
+      display: flex;
+      align-items: center;
+	  justify-content: center;
+      height: 25px;
+	  width: 30px;
+	  line-height: 25px;
+	  font-size: 12px;
+	  cursor: n-resize;
+	  scroll-snap-align: center; /* Добавляем scroll-snap-align */
+    }
+	
+	.hours span:first-child, .minutes span:first-child {
+	  margin-top: 50px;
+	}
+	
+	.hours span:last-child, .minutes span:last-child {
+	  margin-bottom: 50px;
+	}
+
+    .hours .active, .minutes .active {
+      font-size: 22px;
+	  font-weight: 600;
+    }
+	
+	.hours .preactive, .minutes .preactive, .hours .postactive, .minutes .postactive {
+      font-size: 17px;
+    }
+
+    .hours::-webkit-scrollbar,
+    .minutes::-webkit-scrollbar {
+      width: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="hours"></div>
+  <div class="minutes"></div>
+
+  <script>
+    function generateSpans(start, end, step, containerId) {
+	  const spans = [];
+	  for (let i = start; i <= end; i += step) {
+		spans.push(`<span>${i.toString().padStart(2, '0')}</span>`);
+	  }
+	  document.querySelector(`.${containerId}`).innerHTML = spans.join('');
+	}
+
+	generateSpans(0, 23, 1, 'hours');
+	generateSpans(0, 59, 5, 'minutes');
+
+	const hoursContainers = document.querySelectorAll('.hours');
+	const minutesContainers = document.querySelectorAll('.minutes');
+
+	function updateActiveSpan(container, step) {
+	  const spans = container.querySelectorAll('span');
+	  const containerRect = container.getBoundingClientRect();
+	  const containerCenter = containerRect.top + containerRect.height / 2;
+
+	  let closestSpan = null;
+	  let closestDistance = Infinity;
+
+	  spans.forEach(span => {
+		const spanRect = span.getBoundingClientRect();
+		const spanCenter = spanRect.top + spanRect.height / 2;
+
+		let distance = Math.abs(spanCenter - containerCenter);
+
+		if (container.classList.contains('minutes')) {
+		  distance *= 5;
+		}
+
+		if (distance < closestDistance) {
+		  closestDistance = distance;
+		  closestSpan = span;
+		}
+	  });
+
+	  if (closestSpan) {
+		spans.forEach(span => {
+		  span.classList.remove('preactive', 'active', 'postactive');
+		});
+
+		closestSpan.classList.add('active');
+		const prevSibling = closestSpan.previousElementSibling;
+		const nextSibling = closestSpan.nextElementSibling;
+
+		if (prevSibling) {
+		  prevSibling.classList.add('preactive');
+		}
+		if (nextSibling) {
+		  nextSibling.classList.add('postactive');
+		}
+	  }
+	}
+
+	function handleScroll(event, container, step) {
+	  updateActiveSpan(container, step);
+	}
+
+	hoursContainers.forEach(container => {
+	  updateActiveSpan(container, 1);
+
+	  container.addEventListener('scroll', (event) => handleScroll(event, container, 1));
+
+	  container.addEventListener('touchstart', () => updateActiveSpan(container, 1));
+	  container.addEventListener('touchmove', () => updateActiveSpan(container, 1));
+
+	  // Добавляем обработчики для событий мыши
+	  container.addEventListener('mousedown', () => updateActiveSpan(container, 1));
+	  container.addEventListener('mousemove', () => updateActiveSpan(container, 1));
+	});
+
+	minutesContainers.forEach(container => {
+	  updateActiveSpan(container, 5);
+
+	  container.addEventListener('scroll', (event) => handleScroll(event, container, 5));
+
+	  container.addEventListener('touchstart', () => updateActiveSpan(container, 5));
+	  container.addEventListener('touchmove', () => updateActiveSpan(container, 5));
+
+	  // Добавляем обработчики для событий мыши
+	  container.addEventListener('mousedown', () => updateActiveSpan(container, 5));
+	  container.addEventListener('mousemove', () => updateActiveSpan(container, 5));
+	});
+
+  </script>
+</body>
+</html>
